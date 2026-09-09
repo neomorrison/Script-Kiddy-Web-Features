@@ -72,7 +72,7 @@
     'color:#8d97a8'
   );
   console.log(
-    '%ckiddy.barrelRoll()   kiddy.disco()   kiddy.title("hello")   kiddy.favicon("🍕")   kiddy.edit()   kiddy.spotlight(true)   kiddy.flipTheme()',
+    '%ckiddy.barrelRoll()   kiddy.disco()   kiddy.title("hello")   kiddy.favicon("🍕")   kiddy.cursor("trail")   kiddy.edit()   kiddy.spotlight(true)   kiddy.flipTheme()',
     'font-family:ui-monospace,Menlo,monospace;color:#e9edf3'
   );
 })();

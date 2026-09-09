@@ -27,7 +27,7 @@ folder with anything (`python3 -m http.server`).
 | Popover toast that animates in from `display: none`, exclusive accordion | `popover`, `@starting-style`, `<details name>` |
 | Circular theme wipe from the click point | View Transitions API + `clip-path` |
 
-**Pointer**: inverting spotlight (`mix-blend-mode: difference`), 3D tilt card with glare, magnetic buttons.
+**Pointer**: inverting spotlight (`mix-blend-mode: difference`), 3D tilt card with glare, custom cursor (`cursor: none` plus a lagging ring, crosshair with coordinates, canvas comet trail, direction-facing emoji, or a CSS-only SVG data-URL cursor), magnetic buttons.
 
 **Text**: scramble/decode, CSS glitch.
 
@@ -42,7 +42,7 @@ index.html            all the markup, demos and code snippets
 assets/style.css      design tokens, layout, and every CSS-only effect
 assets/app.js         shared plumbing: scroll dispatcher, theme flip, toast, copy buttons
 assets/fx/chrome.js   title, favicon, address bar, visibility, tab census
-assets/fx/pointer.js  spotlight, tilt, magnetic buttons
+assets/fx/pointer.js  spotlight, tilt, custom cursor, magnetic buttons
 assets/fx/text.js     scramble, glitch toggle, word splitting for the reader
 assets/fx/eggs.js     konami, console, designMode, print
 ```

@@ -658,3 +658,50 @@ body.editing .edit-pill { display: inline-flex; }
 html.no-sda .needs-sda .unsupported { display: block; }
 html.no-vt .needs-vt .unsupported { display: block; }
 html.no-popover .needs-popover .unsupported { display: block; }
+
+/* ==========================================================================
+   Custom cursor
+   ========================================================================== */
+html.custom-cursor, html.custom-cursor * { cursor: none !important; }
+.cursor-layer {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 260;
+  display: none;
+  transition: opacity 0.2s;
+}
+.cursor-layer.on { display: block; }
+.cursor-layer.hidden { opacity: 0; }          /* pointer left the window */
+.cursor-layer > * { display: none; position: absolute; top: 0; left: 0; }
+.cur-dot { width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: var(--accent); }
+.cur-ring {
+  width: 36px; height: 36px; margin: -18px 0 0 -18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent);
+  transition: scale 0.25s cubic-bezier(0.2, 1.2, 0.4, 1), background 0.25s;
+}
+.cursor-layer.hover .cur-ring { scale: 1.8; background: var(--accent-soft); }
+.cursor-layer.down .cur-ring { scale: 0.75; }
+.cur-x { left: 0; right: 0; height: 0; border-top: 1px dashed var(--accent); opacity: 0.7; }
+.cur-y { top: 0; bottom: 0; width: 0; border-left: 1px dashed var(--accent); opacity: 0.7; }
+.cur-label {
+  font: 600 0.7rem var(--mono);
+  color: var(--accent);
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+.cur-emoji { font-size: 34px; line-height: 1; margin: -17px 0 0 -17px; }
+.cur-canvas { inset: 0; width: 100%; height: 100%; }
+.cursor-layer[data-mode="ring"]      :is(.cur-dot, .cur-ring) { display: block; }
+.cursor-layer[data-mode="crosshair"] :is(.cur-x, .cur-y, .cur-label, .cur-dot) { display: block; }
+.cursor-layer[data-mode="trail"]     :is(.cur-canvas, .cur-dot) { display: block; }
+.cursor-layer[data-mode="emoji"]     .cur-emoji { display: block; }
+
+/* CSS-only: an SVG data URL as the cursor image. "4 3" is the hotspot (the arrow tip). */
+html.cursor-svg, html.cursor-svg * {
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><path d='M4 3 L4 25 L10 19.5 L14 28.5 L18.5 26.5 L14.5 17.5 L22.5 17.5 Z' fill='%2360e0b0' stroke='%230a0c10' stroke-width='2' stroke-linejoin='round'/></svg>") 4 3, auto !important;
+}
+@media (hover: none) { .cursor-layer { display: none !important; } }

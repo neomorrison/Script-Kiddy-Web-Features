@@ -16,6 +16,12 @@
 
 <div class="progress" aria-hidden="true"></div>
 <div class="spotlight" id="spotlight" aria-hidden="true"></div>
+<div class="cursor-layer" id="cursor-layer" data-mode="off" aria-hidden="true">
+  <canvas class="cur-canvas"></canvas>
+  <div class="cur-x"></div><div class="cur-y"></div>
+  <div class="cur-ring"></div><div class="cur-dot"></div>
+  <div class="cur-label"></div><div class="cur-emoji">🚀</div>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <button class="btn primary edit-pill" id="edit-done" contenteditable="false" type="button">Done editing (Esc)</button>
 
@@ -559,6 +565,62 @@ card.addEventListener('pointermove', e =&gt; {
           </details>
         </article>
 
+        <!-- Custom cursor -->
+        <article class="card reveal span-2" id="fx-cursor">
+          <header class="card-head">
+            <h3>Custom cursor</h3>
+            <span class="badge">JS · cursor: none</span>
+          </header>
+          <p class="card-desc">
+            Hide the real pointer with <code>cursor: none</code> and draw your own: a lagging ring that grows over links, a full-screen crosshair with coordinates,
+            a comet trail on a canvas, or a rocket that turns to face where you're going. The last mode needs no JS at all: any SVG data URL can be a cursor image.
+          </p>
+          <div class="demo">
+            <div class="big" id="cursor-readout">pick a mode</div>
+            <div class="readout">then hover these: <a href="#fx-cursor">a link</a> · <button class="btn sm" type="button">a button</button> · desktop only</div>
+          </div>
+          <div class="controls">
+            <fieldset class="seg">
+              <legend class="sr-only">Cursor mode</legend>
+              <label><input type="radio" name="cursor-mode" value="off" checked><span>Off</span></label>
+              <label><input type="radio" name="cursor-mode" value="ring"><span>Ring</span></label>
+              <label><input type="radio" name="cursor-mode" value="crosshair"><span>Crosshair</span></label>
+              <label><input type="radio" name="cursor-mode" value="trail"><span>Trail</span></label>
+              <label><input type="radio" name="cursor-mode" value="emoji"><span>Emoji</span></label>
+              <label><input type="radio" name="cursor-mode" value="svg"><span>SVG · CSS only</span></label>
+            </fieldset>
+            <input class="text-input" id="cursor-emoji" type="text" value="🚀" maxlength="4" size="3" aria-label="Cursor emoji">
+          </div>
+          <details class="code">
+            <summary>Show the trick</summary>
+            <div class="code-wrap">
+              <button class="copy" type="button">Copy</button>
+<pre><code>/* hide the real pointer everywhere */
+html.custom-cursor, html.custom-cursor * { cursor: none !important; }
+
+/* a dot that follows exactly and a ring that lags behind it */
+let x = 0, y = 0, rx = 0, ry = 0;
+addEventListener('pointermove', e =&gt; {
+  x = e.clientX; y = e.clientY;
+  dot.style.translate = `${x}px ${y}px`;
+  ring.classList.toggle('hover', !!e.target.closest('a, button'));   // grow over links
+});
+(function loop() {
+  rx += (x - rx) * 0.2;  ry += (y - ry) * 0.2;
+  ring.style.translate = `${rx}px ${ry}px`;
+  requestAnimationFrame(loop);
+})();
+
+/* a rocket that faces the direction of travel */
+const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+emoji.style.rotate = `${angle + 45}deg`;     // 🚀 points up-right by default
+
+/* or skip the JS entirely: any SVG can be the cursor. "4 3" is the hotspot. */
+html { cursor: url("data:image/svg+xml;utf8,&lt;svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'&gt;…&lt;/svg&gt;") 4 3, auto; }</code></pre>
+            </div>
+          </details>
+        </article>
+
         <!-- Magnetic -->
         <article class="card reveal span-2" id="fx-magnet">
           <header class="card-head">
@@ -754,6 +816,7 @@ function barrelRoll() {
               kiddy.disco()<br>
               kiddy.title('hello world')<br>
               kiddy.favicon('🍕')<br>
+              kiddy.cursor('trail')<br>
               kiddy.edit()
             </div>
           </div>
