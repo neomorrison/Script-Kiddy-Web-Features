@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SCRIPT KIDDY</title>
+  <meta name="description" content="A showcase of unconventional web effects: animated tab titles, scroll-driven favicons, URL-bar progress bars, CSS-only tricks and a few easter eggs.">
+  <link rel="icon" id="favicon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2360e0b0'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/style.css">
+  <script>
+    /* apply the saved theme before first paint so there is no flash */
+    try { if (localStorage.getItem('kiddy-theme') === 'light') document.documentElement.classList.add('light'); } catch (e) {}
+  </script>
+</head>
+<body>
+
+<div class="progress" aria-hidden="true"></div>
+<div class="spotlight" id="spotlight" aria-hidden="true"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<button class="btn primary edit-pill" id="edit-done" contenteditable="false" type="button">Done editing (Esc)</button>
+
+<nav class="nav">
+  <a class="brand" href="#top">~/script-kiddy<span class="cursor"></span></a>
+  <div class="nav-links">
+    <a href="#chrome">Browser chrome</a>
+    <a href="#css">CSS only</a>
+    <a href="#pointer">Pointer</a>
+    <a href="#text">Text</a>
+    <a href="#eggs">Easter eggs</a>
+  </div>
+  <span class="pill" id="tab-pill" title="Counted with BroadcastChannel">tabs: <b id="tab-count-nav">1</b></span>
+  <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle light and dark theme" title="Toggle theme (view transition)">◐</button>
+</nav>
+
+<main id="top">
+
+  <!-- ================= HERO ================= -->
+  <header class="hero wrap">
+    <h1 id="hero-title" data-text="SCRIPT KIDDY">SCRIPT KIDDY</h1>
+    <p class="lede">
+      A cabinet of curiosities for the parts of the browser you forgot you could hack:
+      <strong>the tab title</strong>, <strong>the favicon</strong>, <strong>the URL bar</strong>,
+      <strong>the console</strong>, and a pile of tricks that need <strong>zero JavaScript</strong>.
+      Look up at your tab. It's already moving.
+    </p>
+    <div class="hero-actions">
+      <a class="btn primary" href="#chrome">Start poking</a>
+      <button class="btn" id="hero-rescramble" type="button">Re-run the title decode</button>
+    </div>
+
+    <div class="browser" aria-hidden="true">
+      <div class="tabbar">
+        <div class="tab active">
+          <img id="mock-favicon" alt="" width="16" height="16">
+          <span id="mock-title">SCRIPT KIDDY</span>
+          <span class="x">×</span>
+        </div>
+        <div class="tab"><span class="dot"></span><span>New tab</span></div>
+      </div>
+      <div class="omnibar">
+        <div class="traffic"><i></i><i></i><i></i></div>
+        <div class="url" id="mock-url"></div>
+      </div>
+      <div class="browser-note">↑ a live mirror of your real tab, so you can watch it without looking away</div>
+    </div>
+
+    <div class="scroll-hint">scroll to explore <i>↓</i></div>
+  </header>
+
+  <!-- ================= BROWSER CHROME ================= -->
+  <section class="section" id="chrome">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">01 / Browser chrome</span>
+        <h2>Effects that live outside the page</h2>
+        <p>The tab strip, the favicon and the address bar are all writable from JavaScript. Nobody said you had to be tasteful about it.</p>
+      </div>
+
+      <div class="grid">
+
+        <!-- Title marquee -->
+        <article class="card reveal" id="fx-title">
+          <header class="card-head">
+            <h3>Marquee tab title</h3>
+            <span class="badge">JS · every browser</span>
+          </header>
+          <p class="card-desc">
+            <code>document.title</code> is just a string, and strings can be rotated on a timer.
+            <code>| WORD |</code> → <code>WORD |</code> → <code>ORD |</code> → <code>RD |</code>… Pad with a non-breaking space; browsers collapse regular ones.
+          </p>
+          <div class="demo">
+            <div class="big" id="title-preview">| SCRIPT KIDDY</div>
+            <div class="readout">what your tab says right now</div>
+          </div>
+          <div class="controls">
+            <fieldset class="seg">
+              <legend class="sr-only">Title mode</legend>
+              <label><input type="radio" name="title-mode" value="marquee" checked><span>Marquee</span></label>
+              <label><input type="radio" name="title-mode" value="typewriter"><span>Typewriter</span></label>
+              <label><input type="radio" name="title-mode" value="scroll"><span>Scroll %</span></label>
+              <label><input type="radio" name="title-mode" value="wave"><span>Wave</span></label>
+              <label><input type="radio" name="title-mode" value="static"><span>Off</span></label>
+            </fieldset>
+            <input class="text-input grow" id="title-text" type="text" value="SCRIPT KIDDY" maxlength="40" aria-label="Title text">
+          </div>
+          <details class="code">
+            <summary>Show the trick</summary>
+            <div class="code-wrap">
+              <button class="copy" type="button">Copy</button>
+<pre><code>const text = '| SCRIPT KIDDY\u00A0';   // nbsp: normal spaces get collapsed
+let i = 0;
+setInterval(() =&gt; {
+  const j = i++ % text.length;
+  document.title = text.slice(j) + text.slice(0, j);
+}, 180);</code></pre>
+            </div>
+          </details>
+        </article>
+
+        <!-- Favicon -->
+        <article class="card reveal" id="fx-favicon">
+          <header class="card-head">
+            <h3>Favicon that reacts to you</h3>
+            <span class="badge">JS · not Safari</span>
+          </header>
+          <p class="card-desc">
+            Draw on a 64×64 <code>&lt;canvas&gt;</code>, export it as a data URL, and point <code>&lt;link rel="icon"&gt;</code> at it.
+            Default: a clock hand that makes one full turn as you scroll the page.
+          </p>
+          <div class="demo">
+            <canvas id="favicon-preview" width="64" height="64" style="width:96px;height:96px;border-radius:20px" aria-label="Favicon preview"></canvas>
+            <div class="readout" id="favicon-readout">scroll to turn the hand</div>
+          </div>
+          <div class="controls">
+            <fieldset class="seg">
+              <legend class="sr-only">Favicon mode</legend>
+              <label><input type="radio" name="favicon-mode" value="clock" checked><span>Clock</span></label>
+              <label><input type="radio" name="favicon-mode" value="ring"><span>Ring</span></label>
+              <label><input type="radio" name="favicon-mode" value="eyes"><span>Eyes</span></label>
+              <label><input type="radio" name="favicon-mode" value="badge"><span>Badge</span></label>
+              <label><input type="radio" name="favicon-mode" value="emoji"><span>Emoji</span></label>
+            </fieldset>
+            <button class="btn sm" id="badge-bump" type="button">+1 unread</button>
+            <input class="text-input" id="emoji-input" type="text" value="🦄" maxlength="4" size="3" aria-label="Emoji favicon">
+          </div>
+          <details class="code">
+            <summary>Show the trick</summary>
+            <div class="code-wrap">
+              <button class="copy" type="button">Copy</button>
+<pre><code>const link = document.querySelector('link[rel="icon"]');
+const c = document.createElement('canvas');
+c.width = c.height = 64;
+const ctx = c.getContext('2d');
+
+addEventListener('scroll', () =&gt; {
+  const el = document.documentElement;
+  const p = el.scrollTop / (el.scrollHeight - el.clientHeight); // 0..1
+  ctx.clearRect(0, 0, 64, 64);
+  ctx.fillStyle = '#60e0b0';
+  ctx.beginPath(); ctx.arc(32, 32, 30, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#0a0c10'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(32, 32);
+  ctx.lineTo(32 + 22 * Math.cos(p * Math.PI * 2 - Math.PI / 2),
+             32 + 22 * Math.sin(p * Math.PI * 2 - Math.PI / 2));
+  ctx.stroke();
+  link.href = c.toDataURL();       // the tab updates instantly
+}, { passive: true });</code></pre>
+            </div>
+          </details>
+        </article>
+
+        <!-- URL bar -->
+        <article class="card reveal" id="fx-url">
+          <header class="card-head">
+            <h3>Progress bar in the address bar</h3>
+            <span class="badge">JS · every browser</span>
+          </header>
+          <p class="card-desc">
+            <code>history.replaceState</code> rewrites the URL without reloading or polluting history.
+            So the fragment can be a scroll bar: <code>#[=====-----]-52</code>. Off by default because it hijacks anchor links.
+          </p>
+          <div class="demo">
+            <div class="big" id="url-preview">#[----------]-0</div>
+            <div class="readout">turn it on, then scroll and watch the address bar</div>
+          </div>
+          <div class="controls">
+            <label class="switch"><input type="checkbox" id="url-toggle"><span class="track"></span><span>Write scroll progress to the URL</span></label>
+          </div>
+          <details class="code">
+            <summary>Show the trick</summary>
+            <div class="code-wrap">
+              <button class="copy" type="button">Copy</button>
+<pre><code>let last = '';
+addEventListener('scroll', () =&gt; {
+  const el = document.documentElement;
+  const p = el.scrollTop / (el.scrollHeight - el.clientHeight);
+  const n = Math.round(p * 10);
+  const bar = '#[' + '='.repeat(n) + '-'.repeat(10 - n) + ']-' + Math.round(p * 100);
+  if (bar === last) return;            // Safari rate-limits replaceState, so only write changes
+  last = bar;
+  history.replaceState(null, '', location.pathname + bar);
+}, { passive: true });</code></pre>
+            </div>
+          </details>
+        </article>
+
+        <!-- Visibility -->
+        <article class="card reveal" id="fx-away">
+          <header class="card-head">
+            <h3>It notices when you leave</h3>
+            <span class="badge">JS · every browser</span>
+          </header>
+          <p class="card-desc">
+            The Page Visibility API fires <code>visibilitychange</code> when you switch tabs. Swap the title and favicon while you're gone, then greet you when you're back.
+            Go on, <kbd>Ctrl</kbd>+<kbd>Tab</kbd> away and come back.
+          </p>
+          <div class="demo">
+            <div class="big" id="away-count">0</div>
+            <div class="readout">times you've left · longest trip <b id="away-longest">0s</b></div>
+          </div>
+          <details class="code">
+            <summary>Show the trick</summary>
+            <div class="code-wrap">
+              <button class="copy" type="button">Copy</button>
+<pre><code>let left = 0;
+document.addEventListener('visibilitychange', () =&gt; {
+  if (document.hidden) {
+    left = Date.now();
+    document.title = '👀 psst… come back';
+  } else {
+    document.title = 'SCRIPT KIDDY';
+    console.log(`gone for ${(Date.now() - left) / 1000}s`);
+  }
+});</code></pre>
+            </div>
+          </details>
+        </article>
+
+        <!-- Tab census -->
+        <article class="card reveal" id="fx-tabs">
+          <header class="card-head">
+            <h3>Tabs that know about each other</h3>
+            <span class="badge">JS · needs http(s)</span>
+          </header>
+          <p class="card-desc">
+            <code>BroadcastChannel</code> is a same-origin group chat between tabs. Every tab announces itself and answers roll-call, so each one can count the others.
+            Open this page in a second tab and watch the number in the top bar.
+          </p>
+          <div class="demo">
+            <div class="big"><span id="tab-count">1</span> <span style="font-weight:500;color:var(--muted)">open</span></div>
+            <div class="readout">this tab's id: <b id="tab-id">…</b></div>
+          </div>
+          <div class="controls">
+            <button class="btn sm" id="open-tab" type="button">Open another tab</button>
+            <button class="btn sm" id="ping-tabs" type="button">Wave at the other tabs</button>
+          </div>
+          <details class="code">
+            <summary>Show the trick</summary>
+            <div class="code-wrap">
+              <button class="copy" type="button">Copy</button>
+<pre><code>const me = crypto.randomUUID();
+const bc = new BroadcastChannel('census');
+const peers = new Map();                       // id → last seen
+
+bc.onmessage = ({ data }) =&gt; {
+  if (data.type === 'bye') peers.delete(data.id);
+  else peers.set(data.id, Date.now());
+  if (data.type === 'hello') bc.postMessage({ type: 'here', id: me });
+  console.log('tabs open:', peers.size + 1);
+};
+bc.postMessage({ type: 'hello', id: me });
+addEventListener('pagehide', () =&gt; bc.postMessage({ type: 'bye', id: me }));</code></pre>
+            </div>
+          </details>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CSS ONLY ================= -->
+  <section class="section" id="css">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">02 / CSS only</span>
+        <h2>No JavaScript was harmed</h2>
+        <p>Modern CSS can watch the scrollbar, react to checkboxes on the other side of the page, animate custom properties and open popovers, all by itself.</p>
+      </div>
+
+      <div class="grid">
+
+        <!-- Scroll-driven reading -->
+        <article class="card reveal span-2 needs-sda" id="fx-sda">
+          <header class="card-head">
+            <h3>Scroll-driven animations</h3>
+            <span class="badge css">CSS · animation-timeline</span>
+          </header>
+          <p class="card-desc">
+            <code>animation-timeline: view()</code> binds an animation to an element's position in the viewport instead of the clock.
+            Each word below is its own element, lighting up as it crosses the middle of the screen. The bar at the very top of the page and every card's fade-in use the same idea.
+            <span class="unsupported">Your browser doesn't support scroll-driven animations yet, so the words are shown fully lit.</span>
+          </p>
+          <div class="demo left">
+            <p class="reader" id="reader">Most of a web page is a rectangle you control. But the browser hands you more than that: the tab title, the little icon next to it, the address bar, the console, even a heads-up when you leave. This page pokes at all of it, one small and mostly harmless trick at a time, and this paragraph is lit by the scrollbar, not by a script.</p>
+          </div>
+          <details class="code">
+            <summary>Show the trick</summary>
+            <div class="code-wrap">
+              <button class="copy" type="button">Copy</button>
+<pre><code>/* each word: &lt;span class="w"&gt;word&lt;/span&gt; */
+.w {
+  color: gray;
+  animation: lightup linear both;
+  animation-timeline: view();               /* progress = where I am in the viewport */
+  animation-range: cover 38% cover 52%;     /* fire while crossing the middle */
+}
+@keyframes lightup { to { color: white; } }
+
+/* the page progress bar, same trick on the root scroller */
+.progress {
+  transform-origin: 0 50%;
+  animation: grow linear both;
+  animation-timeline: scroll(root);
+}
+@keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }</code></pre>
+            </div>
+          </details>
+        </article>
+
+        <!-- :has() -->
+        <article class="card reveal" id="fx-has">
+          <header class="card-head">
+            <h3>One radio button recolours the site</h3>
+            <span class="badge css">CSS · :has()</span>
+          </header>
+          <p class="card-desc">
+            <code>:has()</code> lets an ancestor react to its descendants. <code>html:has(#pink:checked)</code> changes a <code>--hue</code> variable on the root, and every accent on the page follows. The radios below are the only "state".
+          </p>
+          <div class="demo">
+            <div class="swatches">
+              <label><input type="radio" name="hue" id="hue-mint" checked><span style="--h:165">mint</span></label>
+              <label><input type="radio" name="hue" id="hue-violet"><span style="--h:290">violet</span></label>
+              <label><input type="radio" name="hue" id="hue-amber"><span style="--h:75">amber</span></label>
+              <label><input type="radio" name="hue" id="hue-pink"><span style="--h:350">pink</span></label>
+              <label><input type="radio" name="hue" id="hue-sky"><span style="--h:235">sky</span></label>
+            </div>
+            <div class="readout">look at the nav, the buttons, the progress bar, the favicon…</div>
+          </div>
+          <details class="code">
+            <summary>Show the trick</summary>
+            <div class="code-wrap">
+              <button class="copy" type="button">Copy</button>
+<pre><code>:root { --hue: 165; --accent: oklch(80% 0.17 var(--hue)); }
+
+html:has(#hue-violet:checked) { --hue: 290; }
+html:has(#hue-amber:checked)  { --hue: 75;  }
+html:has(#hue-pink:checked)   { --hue: 350; }
+
+/* the inputs can be anywhere in the document */
+&lt;input type="radio" name="hue" id="hue-pink"&gt;</code></pre>
+            </div>
+          </details>
+        </article>
+
+        <!-- @property -->
+        <article class="card reveal" id="fx-property">
+          <header class="card-head">
+            <h3>Animating a custom property</h3>
+            <span class="badge css">CSS · @property</span>
+          </header>
+          <p class="card-desc">
+            Custom properties normally can't be animated (the browser doesn't know they're numbers). <code>@property</code> gives <code>--angle</code> a type, so a keyframe can spin it and a conic gradient can read it.
+          </p>
+          <div class="demo">
+            <div class="glow" id="glow">this border is one variable</div>
+          </div>
+          <div class="controls">
+            <label class="switch"><input type="checkbox" id="glow-toggle" checked><span class="track"></span><span>Spin</span></label>
+          </div>
+          <details class="code">
+            <summary>Show the trick</summary>
+            <div class="code-wrap">
+              <button class="copy" type="button">Copy</button>
+<pre><code>@property --angle { syntax: "&lt;angle&gt;"; inherits: false; initial-value: 0deg; }
+
+.glow {
+  border: 2px solid transparent;
+  background:
+    linear-gradient(var(--card), var(--card)) padding-box,
+    conic-gradient(from var(--angle), var(--accent), transparent 25%,
+                   transparent 50%, var(--accent) 75%, transparent) border-box;
+  animation: spin 3.5s linear infinite;
+}
+@keyframes spin { to { --angle: 360deg; } }</code></pre>
+            </div>
+          </details>
+        </article>
+
+        <!-- popover + details -->
+        <article class="card reveal needs-popover" id="fx-popover">
+          <header class="card-head">
+            <h3>Toasts and accordions, no script</h3>
+            <span class="badge css">HTML · popover, details</span>
+          </header>
+          <p class="card-desc">
+            The <code>popover</code> attribute gives you a top-layer, light-dismiss toast for free, and <code>@starting-style</code> lets it animate in from <code>display: none</code>.
+            <code>&lt;details name="…"&gt;</code> makes an exclusive accordion. <span class="unsupported">Your browser doesn't support popover yet; the accordion still works.</span>
+          </p>
+          <div class="demo">
+            <button class="btn primary" popovertarget="pop-toast" type="button">Show a popover toast</button>
+            <div id="pop-toast" popover class="toast-pop">👋 Hi. No JavaScript. Click anywhere to dismiss me.</div>
+            <div class="acc">
+              <details name="faq" open><summary>Why does only one open?</summary><p>Because they share a <code>name</code>. The browser closes the others, like radio buttons.</p></details>
+              <details name="faq"><summary>Is this accessible?</summary><p>More than the average div soup: it's a real disclosure widget with keyboard support built in.</p></details>
+              <details name="faq"><summary>Can I animate it?</summary><p>Yes: <code>::details-content</code> plus <code>transition-behavior: allow-discrete</code> handles the open/close.</p></details>
+            </div>
+          </div>
+          <details class="code">
+            <summary>Show the trick</summary>
+            <div class="code-wrap">
+              <button class="copy" type="button">Copy</button>
+<pre><code>&lt;button popovertarget="toast"&gt;Show&lt;/button&gt;
+&lt;div id="toast" popover&gt;Hi. No JavaScript.&lt;/div&gt;
+
+[popover] {
+  opacity: 0; translate: 0 16px;
+  transition: opacity .35s, translate .35s,
+              display .35s allow-discrete, overlay .35s allow-discrete;
+}
+[popover]:popover-open { opacity: 1; translate: 0 0; }
+@starting-style { [popover]:popover-open { opacity: 0; translate: 0 16px; } }
+
+&lt;details name="faq"&gt;…&lt;/details&gt;   &lt;!-- same name = only one open --&gt;</code></pre>
+            </div>
+          </details>
+        </article>
+
+        <!-- View transitions -->
+        <article class="card reveal needs-vt" id="fx-vt">
+          <header class="card-head">
+            <h3>Theme flip with a circular wipe</h3>
+            <span class="badge">CSS + 6 lines of JS</span>
+          </header>
+          <p class="card-desc">
+            <code>document.startViewTransition()</code> snapshots the page, applies your change, then animates between the two images.
+            Here the new snapshot is revealed by a <code>clip-path</code> circle growing from wherever you clicked.
+            <span class="unsupported">No View Transitions here, so the theme just flips.</span>
+          </p>
+          <div class="demo">
+            <button class="btn primary theme-btn" type="button">Flip the theme from here</button>
+            <div class="readout">or use ◐ in the nav</div>
+          </div>
+          <details class="code">
+            <summary>Show the trick</summary>
+            <div class="code-wrap">
+              <button class="copy" type="button">Copy</button>
+<pre><code>btn.addEventListener('click', e =&gt; {
+  const x = e.clientX, y = e.clientY;
+  const r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+  const flip = () =&gt; document.documentElement.classList.toggle('light');
+  if (!document.startViewTransition) return flip();
+  document.startViewTransition(flip).ready.then(() =&gt;
+    document.documentElement.animate(
+      { clipPath: [`circle(0 at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`] },
+      { duration: 600, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' }
+    ));
+});
+
+/* css: stop the default cross-fade so the wipe is the only thing you see */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }</code></pre>
+            </div>
+          </details>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= POINTER ================= -->
+  <section class="section" id="pointer">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">03 / Pointer</span>
+        <h2>Things that follow the mouse</h2>
+        <p>A few numbers from <code>pointermove</code>, piped into CSS custom properties. The browser does the rest.</p>
+      </div>
+
+      <div class="grid">
+
+        <!-- Spotlight -->
+        <article class="card reveal" id="fx-spotlight">
+          <header class="card-head">
+            <h3>Inverting spotlight</h3>
+            <span class="badge">JS · mix-blend-mode</span>
+          </header>
+          <p class="card-desc">
+            A white disc with <code>mix-blend-mode: difference</code> inverts whatever it passes over. It's fixed to the viewport and lags behind the pointer with a little easing so it feels heavy.
+          </p>
+          <div class="demo">
+            <div class="big">invert everything</div>
+            <div class="readout">hover anywhere on the page once it's on · desktop only</div>
+          </div>
+          <div class="controls">
+            <label class="switch"><input type="checkbox" id="spot-toggle"><span class="track"></span><span>Spotlight</span></label>
+            <label class="readout">size <input type="range" id="spot-size" min="60" max="360" value="160" step="10"></label>
+          </div>
+          <details class="code">
+            <summary>Show the trick</summary>
+            <div class="code-wrap">
+              <button class="copy" type="button">Copy</button>
+<pre><code>.spotlight {
+  position: fixed; width: 160px; height: 160px; border-radius: 50%;
+  background: #fff; mix-blend-mode: difference; pointer-events: none;
+}
+
+let tx = 0, ty = 0, x = 0, y = 0;
+addEventListener('pointermove', e =&gt; { tx = e.clientX; ty = e.clientY; });
+(function loop() {
+  x += (tx - x) * 0.18;  y += (ty - y) * 0.18;          // ease toward the pointer
+  spot.style.translate = `${x - 80}px ${y - 80}px`;
+  requestAnimationFrame(loop);
+})();</code></pre>
+            </div>
+          </details>
+        </article>
+
+        <!-- Tilt -->
+        <article class="card reveal" id="fx-tilt">
+          <header class="card-head">
+            <h3>3D tilt with a moving glare</h3>
+            <span class="badge">JS · perspective</span>
+          </header>
+          <p class="card-desc">
+            Pointer position inside the card becomes two rotation angles and a highlight position. Four custom properties, one transform.
+          </p>
+          <div class="demo">
+            <div class="tilt" id="tilt"><span>hover me</span></div>
+          </div>
+          <details class="code">
+            <summary>Show the trick</summary>
+            <div class="code-wrap">
+              <button class="copy" type="button">Copy</button>
+<pre><code>.tilt {
+  transform: perspective(700px) rotateX(var(--rx)) rotateY(var(--ry));
+}
+.tilt::after {   /* the glare */
+  background: radial-gradient(240px circle at var(--gx) var(--gy), #fff5, transparent 60%);
+}
+
+card.addEventListener('pointermove', e =&gt; {
+  const r = card.getBoundingClientRect();
+  const px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+  card.style.setProperty('--rx', `${(0.5 - py) * 18}deg`);
+  card.style.setProperty('--ry', `${(px - 0.5) * 18}deg`);
+  card.style.setProperty('--gx', `${px * 100}%`);
+  card.style.setProperty('--gy', `${py * 100}%`);
+});</code></pre>
+            </div>
+          </details>
+        </article>
+
+        <!-- Magnetic -->
+        <article class="card reveal span-2" id="fx-magnet">
+          <header class="card-head">
+            <h3>Magnetic buttons</h3>
+            <span class="badge">JS · translate</span>
+          </header>
+          <p class="card-desc">
+            Each button sits in an invisible padded zone. Inside the zone it's pulled toward the pointer; on the way out it snaps back with an overshooting easing curve.
+          </p>
+          <div class="demo">
+            <div>
+              <span class="magnet-zone"><button class="btn magnet" type="button">pull</button></span>
+              <span class="magnet-zone"><button class="btn primary magnet" type="button">me</button></span>
+              <span class="magnet-zone"><button class="btn magnet" type="button">closer</button></span>
+              <span class="magnet-zone"><button class="btn magnet" type="button">✨</button></span>
+            </div>
+          </div>
+          <details class="code">
+            <summary>Show the trick</summary>
+            <div class="code-wrap">
+              <button class="copy" type="button">Copy</button>
+<pre><code>zone.addEventListener('pointermove', e =&gt; {
+  const r = btn.getBoundingClientRect();
+  const dx = e.clientX - (r.left + r.width / 2);
+  const dy = e.clientY - (r.top + r.height / 2);
+  btn.style.translate = `${dx * 0.4}px ${dy * 0.4}px`;
+});
+zone.addEventListener('pointerleave', () =&gt; { btn.style.translate = '0 0'; });
+
+.magnet { transition: translate .55s cubic-bezier(.2, 1.5, .4, 1); }  /* overshoot = springy */</code></pre>
+            </div>
+          </details>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TEXT ================= -->
+  <section class="section" id="text">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">04 / Text</span>
+        <h2>Letters behaving badly</h2>
+        <p>Two ways to make a heading look like it came from a broken terminal.</p>
+      </div>
+
+      <div class="grid">
+
+        <!-- Scramble -->
+        <article class="card reveal" id="fx-scramble">
+          <header class="card-head">
+            <h3>Decode / scramble</h3>
+            <span class="badge">JS · requestAnimationFrame</span>
+          </header>
+          <p class="card-desc">
+            Every character gets a random reveal time. Until then it shows a random glyph. The page title did this when you arrived.
+          </p>
+          <div class="demo">
+            <div class="big" id="scramble-target" aria-live="off">ACCESS GRANTED</div>
+          </div>
+          <div class="controls">
+            <input class="text-input grow" id="scramble-input" type="text" value="ACCESS GRANTED" maxlength="30" aria-label="Text to scramble">
+            <button class="btn" id="scramble-run" type="button">Decode</button>
+          </div>
+          <details class="code">
+            <summary>Show the trick</summary>
+            <div class="code-wrap">
+              <button class="copy" type="button">Copy</button>
+<pre><code>function scramble(el, text, duration = 1200) {
+  const glyphs = '!&lt;&gt;-_\\/[]{}=+*^?#%&amp;@';
+  const reveal = [...text].map(() =&gt; Math.random() * duration);   // per-char reveal time
+  const start = performance.now();
+  (function tick(now) {
+    const t = now - start;
+    el.textContent = [...text].map((ch, i) =&gt;
+      ch === ' ' ? ' ' : t &gt;= reveal[i] ? ch : glyphs[Math.random() * glyphs.length | 0]
+    ).join('');
+    if (t &lt; duration) requestAnimationFrame(tick);
+  })(start);
+}</code></pre>
+            </div>
+          </details>
+        </article>
+
+        <!-- Glitch -->
+        <article class="card reveal" id="fx-glitch">
+          <header class="card-head">
+            <h3>Glitch</h3>
+            <span class="badge css">CSS · clip-path</span>
+          </header>
+          <p class="card-desc">
+            Two pseudo-elements copy the text with <code>content: attr(data-text)</code>, get tinted, and are sliced by keyframed <code>clip-path: inset()</code> values with <code>steps(1)</code> so they jump instead of slide.
+          </p>
+          <div class="demo">
+            <span class="glitch" id="glitch" data-text="SYSTEM FAILURE">SYSTEM FAILURE</span>
+          </div>
+          <div class="controls">
+            <label class="switch"><input type="checkbox" id="glitch-toggle" checked><span class="track"></span><span>Glitch</span></label>
+          </div>
+          <details class="code">
+            <summary>Show the trick</summary>
+            <div class="code-wrap">
+              <button class="copy" type="button">Copy</button>
+<pre><code>&lt;span class="glitch" data-text="SYSTEM FAILURE"&gt;SYSTEM FAILURE&lt;/span&gt;
+
+.glitch { position: relative; }
+.glitch::before, .glitch::after {
+  content: attr(data-text); position: absolute; inset: 0;
+}
+.glitch::before { color: hotpink; left: 3px;  animation: g1 2.4s steps(1) infinite; }
+.glitch::after  { color: cyan;    left: -3px; animation: g2 1.9s steps(1) infinite; }
+@keyframes g1 {
+  0%  { clip-path: inset(12% 0 70% 0); }
+  10% { clip-path: inset(60% 0 8% 0); }
+  20% { clip-path: inset(30% 0 50% 0); }
+  /* … a few more random slices … */
+  60%, 100% { opacity: 0; }     /* rest between bursts */
+}</code></pre>
+            </div>
+          </details>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= EASTER EGGS ================= -->
+  <section class="section" id="eggs">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">05 / Easter eggs</span>
+        <h2>For the people who look</h2>
+        <p>Rewards for typing the right thing, opening the right panel, and pressing the wrong button.</p>
+      </div>
+
+      <div class="grid">
+
+        <!-- Konami -->
+        <article class="card reveal" id="fx-konami">
+          <header class="card-head">
+            <h3>Konami code</h3>
+            <span class="badge">JS · keydown</span>
+          </header>
+          <p class="card-desc">
+            Keep the last ten keys in an array and compare. On a match: a barrel roll pivoting around the centre of your viewport, and a short disco on the accent hue.
+          </p>
+          <div class="demo">
+            <div class="konami-keys" id="konami-keys" aria-label="Up Up Down Down Left Right Left Right B A">
+              <kbd>↑</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd><kbd>←</kbd><kbd>→</kbd><kbd>B</kbd><kbd>A</kbd>
+            </div>
+            <div class="readout">type it · or cheat with the button</div>
+          </div>
+          <div class="controls">
+            <button class="btn" id="konami-cheat" type="button">Just do the roll</button>
+          </div>
+          <details class="code">
+            <summary>Show the trick</summary>
+            <div class="code-wrap">
+              <button class="copy" type="button">Copy</button>
+<pre><code>const code = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+let typed = [];
+addEventListener('keydown', e =&gt; {
+  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;   // 'B' → 'b'
+  typed = [...typed, k].slice(-code.length);
+  if (typed.join() === code.join()) barrelRoll();
+});
+
+function barrelRoll() {
+  document.body.style.transformOrigin = `50% ${scrollY + innerHeight / 2}px`;  // spin around what you see
+  document.body.animate(
+    [{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }],
+    { duration: 1200, easing: 'cubic-bezier(.6,0,.4,1)' }
+  );
+}</code></pre>
+            </div>
+          </details>
+        </article>
+
+        <!-- Console -->
+        <article class="card reveal" id="fx-console">
+          <header class="card-head">
+            <h3>Styled console + a tiny API</h3>
+            <span class="badge">JS · console %c</span>
+          </header>
+          <p class="card-desc">
+            <code>%c</code> in <code>console.log</code> applies CSS to the message. The page also leaves a <code>kiddy</code> object on <code>window</code> so you can drive every effect from DevTools.
+          </p>
+          <div class="demo">
+            <div class="console-preview">
+              <span class="tag">SCRIPT KIDDY</span> <span class="dim">you found the console. try:</span><br>
+              kiddy.barrelRoll()<br>
+              kiddy.disco()<br>
+              kiddy.title('hello world')<br>
+              kiddy.favicon('🍕')<br>
+              kiddy.edit()
+            </div>
+          </div>
+          <div class="controls">
+            <span class="readout">open DevTools with <kbd>F12</kbd> or <kbd>⌘</kbd><kbd>⌥</kbd><kbd>I</kbd></span>
+          </div>
+          <details class="code">
+            <summary>Show the trick</summary>
+            <div class="code-wrap">
+              <button class="copy" type="button">Copy</button>
+<pre><code>console.log(
+  '%c SCRIPT KIDDY %c you found the console.',
+  'background:#60e0b0;color:#0a0c10;font-weight:700;padding:4px 8px;border-radius:4px',
+  'color:gray'
+);
+window.kiddy = { barrelRoll, disco, title, favicon, edit };</code></pre>
+            </div>
+          </details>
+        </article>
+
+        <!-- designMode -->
+        <article class="card reveal" id="fx-edit">
+          <header class="card-head">
+            <h3>Edit the whole page</h3>
+            <span class="badge">JS · designMode</span>
+          </header>
+          <p class="card-desc">
+            <code>document.designMode = 'on'</code> is a one-liner from the 90s that turns the entire document into a text editor. Fix typos. Rewrite the headings. Press <kbd>Esc</kbd> when you're done.
+          </p>
+          <div class="demo">
+            <div class="big">this text is wrong</div>
+            <div class="readout">turn on edit mode and fix it</div>
+          </div>
+          <div class="controls">
+            <button class="btn primary" id="edit-toggle" type="button">Edit this page</button>
+          </div>
+          <details class="code">
+            <summary>Show the trick</summary>
+            <div class="code-wrap">
+              <button class="copy" type="button">Copy</button>
+<pre><code>document.designMode = 'on';    // that's it. that's the trick.
+addEventListener('keydown', e =&gt; { if (e.key === 'Escape') document.designMode = 'off'; });</code></pre>
+            </div>
+          </details>
+        </article>
+
+        <!-- Print -->
+        <article class="card reveal" id="fx-print">
+          <header class="card-head">
+            <h3>Print surprise</h3>
+            <span class="badge css">CSS · @media print</span>
+          </header>
+          <p class="card-desc">
+            A print stylesheet hides the whole site and shows something else on paper. Check the preview, then cancel. Or don't. It's your paper.
+          </p>
+          <div class="demo">
+            <div class="big">🖨️</div>
+            <div class="readout">what you get on paper is not this page</div>
+          </div>
+          <div class="controls">
+            <button class="btn" id="print-btn" type="button">Open print preview</button>
+          </div>
+          <details class="code">
+            <summary>Show the trick</summary>
+            <div class="code-wrap">
+              <button class="copy" type="button">Copy</button>
+<pre><code>.print-only { display: none; }
+@media print {
+  body &gt; *:not(.print-only) { display: none !important; }
+  .print-only { display: block; white-space: pre; font-family: monospace; }
+}</code></pre>
+            </div>
+          </details>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <span>Built with zero dependencies. Every trick is in <a href="https://github.com/neomorrison/Script-Kiddy-Web-Features">the source</a>.</span>
+    <span>Respects <code>prefers-reduced-motion</code> · works from <code>file://</code></span>
+  </div>
+</footer>
+
+<!-- only visible when printed -->
+<div class="print-only" aria-hidden="true"> ____   ____ ____  ___ ____ _____   _  _____ ____  ______   __
+/ ___| / ___|  _ \|_ _|  _ \_   _| | |/ /_ _|  _ \|  _ \ \ / /
+\___ \| |   | |_) || || |_) || |   | ' / | || | | | | | \ V /
+ ___) | |___|  _ &lt; | ||  __/ | |   | . \ | || |_| | |_| || |
+|____/ \____|_| \_\___|_|    |_|   |_|\_\___|____/|____/ |_|
+
+You printed a website.
+
+That's fine. Here is a coupon, good for one (1) free browser tab.
+
+  +------------------------------------------+
+  |                                          |
+  |   ONE FREE TAB                           |
+  |   valid at any browser, forever          |
+  |   not redeemable for cash or cookies     |
+  |                                          |
+  +------------------------------------------+
+
+The page you wanted is at the URL in the header of this printout.
+It looks better there. It moves.
+</div>
+
+<script src="assets/app.js" defer></script>
+<script src="assets/fx/chrome.js" defer></script>
+<script src="assets/fx/pointer.js" defer></script>
+<script src="assets/fx/text.js" defer></script>
+<script src="assets/fx/eggs.js" defer></script>
+</body>
+</html>
