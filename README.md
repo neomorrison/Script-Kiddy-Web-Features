@@ -1,10 +1,8 @@
 # Script Kiddy
 
-A single-page showcase of unconventional web effects: the kind that live in the
-tab strip, the favicon, the address bar and the console, plus a set of tricks
-that need no JavaScript at all.
+A single-page showcase of unconventional web effects.
 
-Zero dependencies, no build step. Open `index.html` in a browser, or serve the
+Open `index.html` in a browser, or serve the
 folder with anything (`python3 -m http.server`).
 
 ## What's in it
